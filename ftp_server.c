@@ -1,3 +1,5 @@
+/* A simple server in the internet domain using TCP
+   The port number is passed as an argument */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,10 +12,12 @@
 #include <pthread.h>
 
 void error(char* msg);
-int list();
+char* list();
 int retrieve(char* filename);
 int store(char* filename);
 int sendMSG();
+int writeClient(char* s);
+char target[256];
 
 //socket info
 int sockfd, newsockfd, portno, clilen;
@@ -90,6 +94,7 @@ int main(int argc, char *argv[])
 
         if(strcmp(command, "QUIT\n") == 0){
             printf("Shutting Down\n");
+            writeClient("Server Shutting Down\n");
             break;
         }
 
@@ -98,7 +103,10 @@ int main(int argc, char *argv[])
         }
 
         else if(strcmp(command, "LIST\n") == 0){
-            list();
+            char* l;
+            l = list();
+            writeClient(l);
+            bzero(target, 256);
         }
 
         else if(strcmp(command, "STORE\n") == 0){
@@ -107,21 +115,9 @@ int main(int argc, char *argv[])
 
         else{
             printf("Your input: %s\n", buffer);
+            writeClient("Successfully Sent\n");
 
         }
-
-        //writing to buffer
-        //void* p;
-       //while (n > 0)
-       // {
-            int bytesWritten = write(newsockfd, "Got Your Message", sizeof(buffer));
-            if (bytesWritten <= 0)
-                error("ERROR writing to socket");
-
-            n -= bytesWritten;
-        //    p += bytesWritten;
-        //}
-
     }
     return 0;
 }
@@ -132,8 +128,11 @@ void error(char *msg)
     exit(1);
 }
 
-int list(){
-    struct dirent *de;  // Pointer for directory entry
+char* list(){
+
+    //char *tmp = "";
+    struct dirent *de;// Pointer for directory entry
+
 
     // opendir() returns a pointer of DIR type.
     DIR *dr = opendir(".");
@@ -141,14 +140,20 @@ int list(){
     if (dr == NULL)  // opendir returns NULL if couldn't open directory
     {
         printf("Could not open current directory" );
-        return -1;
+        return NULL;
     }
 
-    while ((de = readdir(dr)) != NULL)
+    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
+    //for readdir()
+    while ((de = readdir(dr)) != NULL) {
+        printf("Trying to concat\n");
         printf("%s\n", de->d_name);
+        strcat(target, de->d_name);
+        strcat(target, " ");
+    }
 
     closedir(dr);
-    return 0;
+    return target;
 }
 
 int retrieve(char* filename){
@@ -162,5 +167,20 @@ int store(char* filename){
 int sendMSG(){
 
     printf("Here is the message: %s\n", buffer);
+    return 0;
+}
+
+int writeClient(char* s){
+    //writing to buffer
+    //void* p;
+    //while (n > 0)
+    // {
+    int bytesWritten = write(newsockfd, s, sizeof(buffer));
+    if (bytesWritten <= 0)
+        error("ERROR writing to socket");
+
+    n -= bytesWritten;
+    //    p += bytesWritten;
+    //}
     return 0;
 }
