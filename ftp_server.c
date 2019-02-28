@@ -14,7 +14,7 @@
 void error(char* msg);
 char* list();
 int retrieve(char* filename);
-int store(char* filename);
+int store(char* filename, int newsockfd);
 int sendMSG();
 int writeClient(char* s, int newsockfd, int fileLeng);
 char target[256];
@@ -27,7 +27,6 @@ int sockfd, portno, clilen;
 
 //variable to transfer files
 char buffer[256];
-char* quit = "QUIT\n";
 
 struct sockaddr_in serv_addr, cli_addr;
 int n;
@@ -74,69 +73,12 @@ int main(int argc, char *argv[])
         if (*newsockfd < 0)
             error("ERROR on accept");
 
-        if (status = pthread_create(&newThread, NULL, sockThread, newsockfd) != 0) {
+        if ((status = pthread_create(&newThread, NULL, sockThread, newsockfd)) != 0) {
             fprintf(stderr, "thread create error %d: %s \n", status, strerror(status));
             free(newsockfd);
             exit(1);
         }
     }
-
-
-/*
-    while(1) {
-
-        char *command;
-        char *param;
-        char w[256];
-
-        bzero(w, 256);
-        bzero(buffer, 256);
-
-        //reading from buffer
-        //while(1) {
-            n = read(newsockfd, buffer, sizeof(buffer));
-            if (n == 0) {
-                break;
-            }
-            if (n < 0)
-                error("ERROR reading from socket");
-
-        //}
-
-        command = strtok(buffer, " ");
-        param = strtok(NULL, " ");
-
-        printf("Command: %s\n", command);
-
-        if(strcmp(command, "QUIT\n") == 0){
-            printf("Shutting Down\n");
-            writeClient("Server Shutting Down\n");
-            break;
-        }
-
-        else if(strcmp(command, "RETRIEVE\n") == 0){
-            retrieve(param);
-        }
-
-        else if(strcmp(command, "LIST\n") == 0){
-            char* l;
-            l = list();
-            writeClient(l);
-            bzero(target, 256);
-        }
-
-        else if(strcmp(command, "STORE\n") == 0){
-            store(param);
-        }
-
-        else{
-            printf("Your input: %s\n", buffer);
-            writeClient("Successfully Sent\n");
-
-        }
-    }
-    return 0;
-    */
 }
 
 void error(char *msg)
@@ -150,7 +92,6 @@ char* list(){
     //char *tmp = "";
     struct dirent *de;// Pointer for directory entry
 
-
     // opendir() returns a pointer of DIR type.
     DIR *dr = opendir(".");
 
@@ -160,11 +101,9 @@ char* list(){
         return NULL;
     }
 
-    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
-    //for readdir()
     while ((de = readdir(dr)) != NULL) {
-        printf("Trying to concat\n");
-        printf("%s\n", de->d_name);
+        //printf("Trying to concat\n");
+        //printf("%s\n", de->d_name);
         strcat(target, de->d_name);
         strcat(target, " ");
     }
@@ -174,11 +113,83 @@ char* list(){
 }
 
 int retrieve(char* filename){
-    return 0;
+
+    char max[100000];
+    printf("About to open\n");
+    FILE *fp = fopen(filename, "r");
+
+    size_t newLen = 0;
+    if (fp != NULL) {
+        newLen = fread(buffer, sizeof(char), 100000, fp);
+        if ( ferror( fp ) != 0 ) {
+            fputs("Error reading file", stderr);
+        } else {
+            max[newLen++] = '\0'; /* Just to be safe. */
+        }
+
+        fclose(fp);
+    }
+
+    printf("Put file in buffer\n");
+    return (int)newLen;
 }
 
-int store(char* filename){
-    return 0;
+int store(char* filename, int newsockfd){
+    //printf("About to open file\n");
+    printf("About to open: %s\n", filename);
+    //filename = strtok(filename, "\n");
+
+
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL)
+    {
+        printf("Error opening file!\n");
+        exit(1);
+    }
+
+
+    sleep(1);
+
+    int total = 0;
+    int bytesLeft = sizeof(buffer); // how many bytes left to send
+    int bytesSent = 1;
+    int temp;
+    int first = 1;
+    int size = 1;
+    //how many bytes sent
+
+    //reading from client
+
+    printf("BUFFER BEFORE STORE: %s\n", buffer);
+    //read(*(int*) sockThread, buffer, sizeof(buffer));
+    while(total < size) {
+
+        printf("BUFFER BEFORE READ: %s\n", buffer);
+        //bytesSent = read(newsockfd, buffer, sizeof(buffer));
+        //if (bytesSent == -1) {
+            //error("ERROR reading from socket");
+            //break;
+        //}
+        if(first){
+            size = (int)buffer[79];
+            first = 0;
+        }
+
+        //write file here
+        printf("Printing to file: %s\n", buffer);
+        fwrite(buffer, sizeof(char), sizeof(buffer), fp );
+        printf("Printed to file: %s\n", buffer);
+
+        total += bytesSent;
+        temp = bytesSent;
+        bytesLeft -= bytesSent;
+        printf("Inwhile\n");
+    }
+
+    fclose(fp);
+    bzero(buffer, 256);
+    printf("Exited store while\n");
+    return total;
 }
 
 int sendMSG(){
@@ -208,11 +219,11 @@ int writeClient(char* s, int newsockfd, int fileLeng){
         total += bytesSent;
         bytesLeft -= bytesSent;
     }
+    return 0;
 }
 
 void* sockThread (void* sockThread){
     while(1) {
-
         char *command;
         char *param;
         char w[256];
@@ -221,7 +232,6 @@ void* sockThread (void* sockThread){
         bzero(buffer, 256);
 
         //reading from buffer
-        //while(1) {
         n = read(*(int*) sockThread, buffer, sizeof(buffer));
         if (n == 0) {
             break;
@@ -233,17 +243,29 @@ void* sockThread (void* sockThread){
 
         command = strtok(buffer, " ");
         param = strtok(NULL, " ");
+        param = strtok(param, "\n");
 
-        printf("Command: %s\n", command);
+        //printf("Command: %s\n", command);
 
         if(strcmp(command, "QUIT\n") == 0){
-            printf("Shutting Down\n");
-            //writeClient("Server Shutting Down\n", *(int*) sockThread);
+            printf("Sockets Closed\n");
             break;
         }
 
-        else if(strcmp(command, "RETRIEVE\n") == 0){
-            retrieve(param);
+        else if(strcmp(command, "STORE") == 0){
+
+            char* realparam = param;
+            realparam = strtok(realparam, "\n");
+            realparam = strtok(realparam, "\0");
+            read(*(int*) sockThread, buffer, sizeof(buffer));
+            printf("About to store: %s\n", realparam);
+            store(realparam, *(int*) sockThread);
+        }
+
+        else if(strcmp(command, "RETRIEVE") == 0){
+            printf("RECEIVEING!\n");
+            int length = retrieve(param);
+            writeClient(buffer, *(int*) sockThread, length);
         }
 
         else if(strcmp(command, "LIST\n") == 0){
@@ -253,12 +275,8 @@ void* sockThread (void* sockThread){
             bzero(target, 256);
         }
 
-        else if(strcmp(command, "STORE\n") == 0){
-            store(param);
-        }
-
         else{
-            printf("Your input: %s\n", buffer);
+            //printf("Your input: %s\n", buffer);
             writeClient("Successfully Sent\n", *(int*) sockThread, 256);
 
         }
