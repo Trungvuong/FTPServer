@@ -20,6 +20,7 @@ int writeClient(char* s, int newsockfd);
 char target[256];
 
 void* sockThread(void* sock);
+void sigHandC(int);
 
 //socket info
 int sockfd, portno, clilen;
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
     int* newsockfd;
     int status;
     pthread_t newThread;
+    signal(SIGINT, sigHandC);
 /*
  * TODO: Implement LIST, RETRIEVE, STORE, MULTITHREADING
  * Also fix the warnings
@@ -228,7 +230,7 @@ void* sockThread (void* sockThread){
 
         if(strcmp(command, "QUIT\n") == 0){
             printf("Shutting Down\n");
-            writeClient("Server Shutting Down\n", *(int*) sockThread);
+            //writeClient("Server Shutting Down\n", *(int*) sockThread);
             break;
         }
 
@@ -255,5 +257,11 @@ void* sockThread (void* sockThread){
     }
     close(*(int*) sockThread);
     free(sockThread);
+    return NULL;
+}
+
+void sigHandC(int sigC) {
+    printf("Shutting down server.\n");
+    close(sockfd);
     exit(0);
 }
