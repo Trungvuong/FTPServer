@@ -16,11 +16,14 @@ char* list();
 int retrieve(char* filename);
 int store(char* filename);
 int sendMSG();
-int writeClient(char* s);
+int writeClient(char* s, int newsockfd);
 char target[256];
 
+void* sockThread(void* sock);
+void sigHandC(int);
+
 //socket info
-int sockfd, newsockfd, portno, clilen;
+int sockfd, portno, clilen;
 
 //variable to transfer files
 char buffer[256];
@@ -31,7 +34,10 @@ int n;
 
 int main(int argc, char *argv[])
 {
-
+    int* newsockfd;
+    int status;
+    pthread_t newThread;
+    signal(SIGINT, sigHandC);
 /*
  * TODO: Implement LIST, RETRIEVE, STORE, MULTITHREADING
  * Also fix the warnings
@@ -62,11 +68,21 @@ int main(int argc, char *argv[])
     clilen = sizeof(cli_addr);
 
     //accepting connection
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *)&clilen);
-    if (newsockfd < 0)
-        error("ERROR on accept");
+    while(1){
+        newsockfd = malloc(sizeof(int));
+        *newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *)&clilen);
+        if (*newsockfd < 0)
+            error("ERROR on accept");
+
+        if (status = pthread_create(&newThread, NULL, sockThread, newsockfd) != 0) {
+            fprintf(stderr, "thread create error %d: %s \n", status, strerror(status));
+            free(newsockfd);
+            exit(1);
+        }
+    }
 
 
+/*
     while(1) {
 
         char *command;
@@ -120,6 +136,7 @@ int main(int argc, char *argv[])
         }
     }
     return 0;
+    */
 }
 
 void error(char *msg)
@@ -170,7 +187,7 @@ int sendMSG(){
     return 0;
 }
 
-int writeClient(char* s){
+int writeClient(char* s, int newsockfd){
     //writing to buffer
     //void* p;
     //while (n > 0)
@@ -183,4 +200,68 @@ int writeClient(char* s){
     //    p += bytesWritten;
     //}
     return 0;
+}
+
+void* sockThread (void* sockThread){
+    while(1) {
+
+        char *command;
+        char *param;
+        char w[256];
+
+        bzero(w, 256);
+        bzero(buffer, 256);
+
+        //reading from buffer
+        //while(1) {
+        n = read(*(int*) sockThread, buffer, sizeof(buffer));
+        if (n == 0) {
+            break;
+        }
+        if (n < 0)
+            error("ERROR reading from socket");
+
+        //}
+
+        command = strtok(buffer, " ");
+        param = strtok(NULL, " ");
+
+        printf("Command: %s\n", command);
+
+        if(strcmp(command, "QUIT\n") == 0){
+            printf("Shutting Down\n");
+            //writeClient("Server Shutting Down\n", *(int*) sockThread);
+            break;
+        }
+
+        else if(strcmp(command, "RETRIEVE\n") == 0){
+            retrieve(param);
+        }
+
+        else if(strcmp(command, "LIST\n") == 0){
+            char* l;
+            l = list();
+            writeClient(l, *(int*) sockThread);
+            bzero(target, 256);
+        }
+
+        else if(strcmp(command, "STORE\n") == 0){
+            store(param);
+        }
+
+        else{
+            printf("Your input: %s\n", buffer);
+            writeClient("Successfully Sent\n", *(int*) sockThread);
+
+        }
+    }
+    close(*(int*) sockThread);
+    free(sockThread);
+    return NULL;
+}
+
+void sigHandC(int sigC) {
+    printf("Shutting down server.\n");
+    close(sockfd);
+    exit(0);
 }
