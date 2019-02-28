@@ -105,19 +105,37 @@ int connectPort(char* serverName, char* portNum){
 }
 
 int readServer(){
+    int total = 0;
+    int bytesLeft = sizeof(buffer); // how many bytes left to send
+    int bytesSent = 1;
+    int temp;
+    int first = 1;
+    int size = 1;
+    //how many bytes sent
+
     //reading from server
     bzero(buffer, 256);
-    //while(1) {
-    n = read(sockfd, buffer, sizeof(buffer));
-    //if(n == 0){
-    //break;
-    // }
-    if (n < 0)
-        error("ERROR reading from socket");
-    printf("%s\n", buffer);
+    while(total < size) {
 
-    //}
-    return 0;
+        bytesSent = read(sockfd, buffer, sizeof(buffer));
+        if (bytesSent == -1) {
+            error("ERROR reading from socket");
+            break;
+        }
+        if(first){
+            size = (int)buffer[79];
+            first = 0;
+        }
+
+        printf("%s\n", buffer);
+        total += bytesSent;
+        temp = bytesSent;
+        bytesLeft -= bytesSent;
+        printf("Inwhile\n");
+    }
+
+    printf("Exited read while\n");
+    return total;
 }
 
 int readServerFile(){
