@@ -16,7 +16,7 @@ char* list();
 int retrieve(char* filename);
 int store(char* filename);
 int sendMSG();
-int writeClient(char* s, int newsockfd);
+int writeClient(char* s, int newsockfd, int fileLeng);
 char target[256];
 
 void* sockThread(void* sock);
@@ -187,19 +187,27 @@ int sendMSG(){
     return 0;
 }
 
-int writeClient(char* s, int newsockfd){
-    //writing to buffer
-    //void* p;
-    //while (n > 0)
-    // {
-    int bytesWritten = write(newsockfd, s, sizeof(buffer));
-    if (bytesWritten <= 0)
-        error("ERROR writing to socket");
+int writeClient(char* s, int newsockfd, int fileLeng){
+    int ssize = strlen(s);
+    char* temp = malloc(ssize + sizeof(s)*sizeof(s));
+    char temp2[80];
+    sprintf(temp2, "%d", ssize );
+    temp = strcat(temp2, s);
 
-    n -= bytesWritten;
-    //    p += bytesWritten;
-    //}
-    return 0;
+    int total = 0;
+    int bytesLeft = fileLeng; // how many bytes left to send
+    int bytesSent = 0; //how many bytes sent
+
+    while(total < fileLeng) {
+        bytesSent = write(newsockfd, temp + total, bytesLeft);
+        if (bytesSent == -1) {
+            error("ERROR writing to socket");
+            break;
+        }
+
+        total += bytesSent;
+        bytesLeft -= bytesSent;
+    }
 }
 
 void* sockThread (void* sockThread){
@@ -241,7 +249,7 @@ void* sockThread (void* sockThread){
         else if(strcmp(command, "LIST\n") == 0){
             char* l;
             l = list();
-            writeClient(l, *(int*) sockThread);
+            writeClient(l, *(int*) sockThread, (strlen(l) + 1));
             bzero(target, 256);
         }
 
@@ -251,7 +259,7 @@ void* sockThread (void* sockThread){
 
         else{
             printf("Your input: %s\n", buffer);
-            writeClient("Successfully Sent\n", *(int*) sockThread);
+            writeClient("Successfully Sent\n", *(int*) sockThread, 256);
 
         }
     }
