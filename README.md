@@ -2,18 +2,28 @@
 CIS 457 Data Communications Project 1
 
 Project 1: Building Multi-Threading FTP Server
+
 Demo: Mar 1, 2019 in class.
-Due: Mar 1, 2019 before start of class.				
+
+Due: Mar 1, 2019 before start of class.	
+
 Grade: 100 pts
+
 Team: 3-4 students
+
 
 # Introduction
 
 Most network applications rely on file transfer protocols in one form or the other. For instance, the HTTP protocol used in the Web is a generic file transfer protocol. In this project, you will implement a FTP client program and a FTP server program for a simple file transfer. At any given time, the server could handle one or more file transfer to the client (s). The implemented FTP application supports text files transfer. The client program presents a command line interface that allows a user to:
+
 •	Connect to a server
+
 •	List files stored at the server.
+
 •	Download (retrieve) a file from the server.
+
 •	Upload (store) a file from the client to the server.
+
 •	Terminate the connection to the server.
 
 The server program binds to a port and listens for requests from a client. After a client connects to the server, the server waits for commands. When the client sends a terminate message (quit), the server terminates the connection and waits for the next connection.
