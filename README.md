@@ -1,3 +1,11 @@
+COMPILE: gcc -Wall s.c -o server 
+         gcc -Wall c.c -o client
+
+RUN: ./client 
+     ./server <port>
+  
+ONCE IN CLIENT:  PLEASE ENTER COMMAND: COMMAND <ip> <port>
+
 # FTPServer
 CIS 457 Data Communications Project 1
 
