@@ -37,10 +37,7 @@ int main(int argc, char *argv[])
     int status;
     pthread_t newThread;
     signal(SIGINT, sigHandC);
-/*
- * TODO: Implement LIST, RETRIEVE, STORE, MULTITHREADING
- * Also fix the warnings
- */
+
 
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
@@ -140,7 +137,7 @@ int store(char* filename, int newsockfd){
     filename = strtok(filename, "\n");
 
     //TEST
-/*
+
     char *temp = "../clientDir/";
 
     char *actualFile = (char *) malloc(1 + strlen(filename)+ strlen(temp) );
@@ -192,7 +189,7 @@ int store(char* filename, int newsockfd){
 
 
     //TEST
-    */
+    /*
     
     FILE *fp = fopen(filename, "w");
     if (fp == NULL)
@@ -250,7 +247,7 @@ int sendMSG(){
 
     printf("Here is the message: %s\n", buffer);
     return 0;
-}
+}*/
 
 int writeClient(char* s, int newsockfd, int fileLeng){
     int ssize = strlen(s);
