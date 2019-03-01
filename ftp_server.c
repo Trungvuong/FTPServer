@@ -115,7 +115,7 @@ char* list(){
 int retrieve(char* filename){
 
     char max[100000];
-    printf("About to open\n");
+    //printf("About to open\n");
     FILE *fp = fopen(filename, "r");
 
     size_t newLen = 0;
@@ -130,16 +130,70 @@ int retrieve(char* filename){
         fclose(fp);
     }
 
-    printf("Put file in buffer\n");
+    //printf("Put file in buffer\n");
     return (int)newLen;
 }
 
 int store(char* filename, int newsockfd){
     //printf("About to open file\n");
-    printf("About to open: %s\n", filename);
-    //filename = strtok(filename, "\n");
+    //printf("About to open: %s\n", filename);
+    filename = strtok(filename, "\n");
+
+    //TEST
+/*
+    char *temp = "../clientDir/";
+
+    char *actualFile = (char *) malloc(1 + strlen(filename)+ strlen(temp) );
+    strcpy(actualFile, temp);
+    strcat(actualFile, filename);
+
+    //printf("About to open: %s\n", actualFile);
+    //actualFile = strcat(actualFile, filename);
+    //actualFile = strtok(actualFile, "\n");
+    //printf("About to open: %s\n", actualFile);
+
+    FILE *reading, *writing;
+    char c;
+
+    reading = fopen(actualFile, "r");
+    if(reading == NULL){
+        printf("ERROR read\n");
+    }
+
+    //printf("Opened\n");
+
+    writing = fopen(filename, "w");
+    if(reading == NULL){
+        printf("ERROR writing\n");
+    }
+
+    //printf("Opened\n");
+
+    // Read contents from file
+    //c = fgetc(reading);
+    int i = 0;
+    while (1)
+    {
+        c = fgetc(reading);
+        fputc(c, writing);
+
+        i++;
+        if(i > 79)
+            break;
+    }
+
+    //printf("\nContents copied to %s", filename);
+
+    fclose(reading);
+    fclose(writing);
+    return 0;
+}
 
 
+
+    //TEST
+    */
+    
     FILE *fp = fopen(filename, "w");
     if (fp == NULL)
     {
@@ -190,8 +244,8 @@ int store(char* filename, int newsockfd){
     bzero(buffer, 256);
     printf("Exited store while\n");
     return total;
-}
 
+} 
 int sendMSG(){
 
     printf("Here is the message: %s\n", buffer);
@@ -257,13 +311,13 @@ void* sockThread (void* sockThread){
             char* realparam = param;
             realparam = strtok(realparam, "\n");
             realparam = strtok(realparam, "\0");
-            read(*(int*) sockThread, buffer, sizeof(buffer));
-            printf("About to store: %s\n", realparam);
+            //read(*(int*) sockThread, buffer, sizeof(buffer));
+            //printf("About to store: %s\n", realparam);
             store(realparam, *(int*) sockThread);
         }
 
         else if(strcmp(command, "RETRIEVE") == 0){
-            printf("RECEIVEING!\n");
+            //printf("RECEIVEING!\n");
             int length = retrieve(param);
             writeClient(buffer, *(int*) sockThread, length);
         }
