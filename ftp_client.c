@@ -37,13 +37,13 @@ int main()
     char* secondParam;
     printf("Please Connect to Port: ");
     fgets(connectInput, 256, stdin);
-    printf("Please Connect to Port: ");
+    //printf("Please Connect to Port: ");
     strtok(connectInput, " ");
-    printf("Please Connect to Port: ");
+    //printf("Please Connect to Port: ");
     firstParam  = strtok(NULL, " ");
-    printf("Please Connect to Port: ");
+    //printf("Please Connect to Port: ");
     secondParam = strtok(NULL, " ");
-    printf("Please Connect to Port: ");
+    //printf("Please Connect to Port: ");
 
 
     if (connectPort(firstParam, secondParam) == 0){
@@ -81,7 +81,7 @@ int main()
             char* realparam = param;
             realparam = strtok(realparam, "\n");
             realparam = strtok(realparam, "\0");
-            printf("real param: %s\n", realparam);
+            //printf("real param: %s\n", realparam);
             sendFile(realparam);
         }
 
@@ -99,7 +99,7 @@ void error(char *msg){
 
 int connectPort(char* serverName, char* portNum){
 
-    printf("Inside connectPort: %s : %s \n", serverName, portNum);
+    //printf("Inside connectPort: %s : %s \n", serverName, portNum);
     portno = atoi(portNum);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -144,20 +144,20 @@ int readServer(){
             first = 0;
         }
 
-        printf("%s\n", buffer);
+        printf("Listing: %s\n", buffer);
         total += bytesSent;
         temp = bytesSent;
         bytesLeft -= bytesSent;
-        printf("Inwhile\n");
+        //printf("Inwhile\n");
     }
 
-    printf("Exited read while\n");
+    //printf("Exited read while\n");
     return total;
 }
 
 int readServerFile(){
 
-    printf("About to open file\n");
+    //printf("About to open file\n");
     param = strtok(param, "\n");
     FILE *fp = fopen(param, "w");
     if (fp == NULL)
@@ -190,24 +190,24 @@ int readServerFile(){
         }
 
         //write file here
-        printf("Printing to file\n");
+        //printf("Printing to file\n");
         fprintf(fp, "%s", buffer );
 
         total += bytesSent;
         temp = bytesSent;
         bytesLeft -= bytesSent;
-        printf("Inwhile\n");
+        //printf("Inwhile\n");
     }
 
     fclose(fp);
-    printf("Exited read while\n");
+    //printf("Exited read while\n");
     return total;
 }
 
 int sendFile(char* filename){
 
     //char max[100000];
-    printf("About to open %s\n", filename);
+    //printf("About to open %s\n", filename);
     long length = 0;
     FILE *fp = fopen(filename, "r");
 
@@ -220,8 +220,8 @@ int sendFile(char* filename){
 
     fclose(fp);
 
-    printf("Put file in buffer: %s\n", buffer);
+    //printf("Put file in buffer: %s\n", buffer);
     write(sockfd, buffer, strlen(buffer));
-    printf("Put file in buffer: %s\n", buffer);
+    //printf("Put file in buffer: %s\n", buffer);
     return (int)length;
 }
